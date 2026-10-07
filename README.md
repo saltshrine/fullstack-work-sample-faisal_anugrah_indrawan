@@ -20,10 +20,9 @@ Penyebab utama unnecessary re-render pada dataset besar biasanya berawal dari pe
 
 ### Solusi Render
 Komponen diimplementasikan dengan tiga teknik yang bekerja bersamaan:
-
-1. **Virtualization** lewat react-window (`FixedSizeList`), sehingga dari 5000 produk hanya sekitar belasan baris yang ada di DOM pada satu waktu, sesuai tinggi viewport 600px dan tinggi baris 50px.
-2. **`React.memo`** membungkus `ProductRow` supaya baris yang propsnya tidak berubah tidak dihitung ulang ketika react-window me-render ulang list saat scroll.
-3. **State di store Zustand** (`useProductStore`), bukan `useState` di komponen induk, sehingga handler seperti `decreaseStock` berada di store dengan referensi yang stabil. Karena itu `useCallback` dan `useMemo` untuk `itemData` tidak diperlukan pada desain ini. Keduanya baru relevan jika state tetap disimpan di komponen induk dan handler harus dikirim lewat props.
+Pertama, virtualization lewat react-window (FixedSizeList) sehingga dari 5000 produk hanya sekitar belasan baris yang benar-benar ada di DOM pada satu waktu, sesuai tinggi viewport 600px dan tinggi baris 50px.
+Kedua, React.memo membungkus ProductRow supaya baris yang propsnya tidak berubah tidak dihitung ulang ketika react-window me-render ulang list saat scroll.
+Ketiga, state dikelola di store Zustand (useProductStore), bukan di useState komponen induk, sehingga handler seperti decreaseStock sudah berada di store dengan referensi yang stabil. Karena itu useCallback dan useMemo untuk itemData tidak diperlukan pada desain ini. Keduanya baru relevan jika state tetap disimpan di komponen induk dan handler harus dikirim lewat props
 
 ### Strategi State Management
 Penyebab re-render global adalah state yang disimpan di komponen induk. Selama ribuan produk berada di sana, update stok satu barang membuat induk render ulang dan menarik semua anaknya. Karena itu state saya pindahkan ke store eksternal (Zustand), lalu datanya dinormalisasi menjadi dua bagian: `ids` yang hanya menyimpan urutan produk, dan `byId` yang menyimpan objek tiap produk. Dengan begitu, mengubah stok cukup mengganti satu entri di `byId`, tanpa `.map()` ke seluruh array dan tanpa menyentuh `ids`.
